@@ -1,0 +1,13 @@
+3/17/2018
+
+A brief argument for the interface abstraction
+
+The original fear was the danger of coupling a program written for the VM to be coupled to an implementation. For example, through contemporary graphics APIs, current games pass polygons directly to the graphics card to be rendered. If graphics were to become a part of the instruction set, be it pixel or polygon, then we are forever glued to that interface.
+
+Now consider the alternative. Say we have a graphics interface for a program to pass polygons to. That interface can pass polygons to the current graphics API. Now say there comes a day when raytracing takes over. Then the interface can handle the conversion to whatever geometric structures that ray tracer requires. The burden is taken off the core instruction set, and put on the outer abstraction.
+
+Now the core VM no longer has to burden itself with forcing a certain paradigmn (pixels, file system structure, sound formats, ...) on the VM as a whole. 
+
+This allows the core VM to take shape in many different machines (simple graphics display, network machine, arcade, microcontroller) and be emulated with its specific needs on future hardware, instead of a bloated all-in-one package. 
+
+But if every created machine is clearly documented, any machine can be ressurected in the future using the same instruction set. 

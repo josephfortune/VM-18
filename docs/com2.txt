@@ -1,0 +1,22 @@
+3/17/2018
+
+--VM18--
+
+Revision 1
+
+The problem with the first design is that though it was abstract in design, it was heavily coupled to that abstract design. This made the design extremely difficult and restrictive as it had to anticipate all future changes in technology that might be in conflict with its current state. For example, in the original design, the graphics functionality was to be included in the instruction set. There was no room for future interpretation. The virtual machine was obligated to follow the instruction. The input/output system was also glued to the instruction set. 
+
+The problem with the original design was that the insruction set became a slave to the virtual computer model that it was intending to support. So much to the point that graphics and IO functionality were actually implemented as part of the instruction set. This is not an accurate abstraction of a computer. Virtual machines intend to abstract the idea of a "computer" as if it were a single unit. Its not. Computers can be abstracted into two layers: the cpu (the instruction set), and the peripherals (external functionality).
+
+Let's examine java as an example. One could argue that the java librarly handles the peripheral abstraction. I wrote my first java GUI program in the early 2010's using the swing library. I recompiled it rougly five years later and recieved warnings that the functions I had used were being deprecated, meaning they would be unavailable in future versions and eventually fail to compile. 
+
+Why?
+
+If we were dealing with a whole new paradign, I could understand. But here we're just talking about a simple window with very basic components that have been available since Windows 95. 
+
+Then I considered the microcontroller. It is coupled with no system. In fact, its coupled with no datatype. It interfaces with other components through its pins. Its not glued to any implementation and it can work with anything, assuming they can agree on a communication method. Each component that can be connected to the microcontroller has its own rules.
+
+Java had the slogan, "Write once, run anywhere." Bull@#*!. When I learned java, I had the LG Lotus phone. The swing library absolutely did not run on the Lotus. The new vision for VM18 is not to "Write once, run anywhere." But instead to, "Write for this type of machine, always run on this type of machine."
+
+So what is a machine? The problem with the original design was that our abstraction got glued to a virtual implementation. So we will abstract the abstraction. Instead of a virtual machine, we will have a virtual processor called the VM core. This VM core will include the instruction set, which will include the ability to read/write to interfaces that are numerically addressed. It is the job of the outer layer of the virtual machine to define the components that are connected to these interfaces, and handle the communication in between. 
+

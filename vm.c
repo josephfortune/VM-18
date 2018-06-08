@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include "vm.h"
 
 
@@ -43,10 +44,24 @@ void printStack(Stack *stack) {
   printf("]<-- \n");
 }
 
+/********************* Machine *******************/
+
+void handleInterface(uint8_t iface, uint32_t size) {
+  if (iface == 1) {
+    printf("%s", iface_buffer);
+  }
+}
+
 /* Print error message and quit */
 void vm_error(char *msg) {
   printf("Error: %s", msg);
   exit(0);
+}
+
+void printMemory(uint8_t *pool) {
+  int i;
+  for (i = 0; i < MEMORY_POOL_SIZE; i++)
+    printf("%d: %x\n", i, pool[i]);
 }
 #endif
 
@@ -56,27 +71,150 @@ void vm_error(char *msg) {
 /* Process opcode */
 int processInstr(Stack *stack, Program *prog, uint8_t opcode) {
 
-  if (opcode == ADD_INT32) {
-    
-    /* Collect the bytes and add as integer */
-    VM_INT32 intUnion1 = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
-    VM_INT32 intUnion2 = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
-    VM_INT32 sumUnion = {.integer = intUnion1.integer + intUnion2.integer};
-
-    /* Decompose sum bytes and push back onto stack (Pushed MSB first) */  
-    push(stack, sumUnion.bytes.byte3);
-    push(stack, sumUnion.bytes.byte2);
-    push(stack, sumUnion.bytes.byte1);
-    push(stack, sumUnion.bytes.byte0); 
+  if (opcode == ADD_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte1 + byte2);    
   }
 
-  else if (opcode == PUSH) {
+  else if (opcode == SUB_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte2 - byte1);
+  }
+
+  else if (opcode == MUL_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte1 * byte2);
+  }
+
+  else if (opcode == DIV_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte2 / byte1);
+  }
+
+  else if (opcode == MOD_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte2 % byte1);
+  }
+
+  else if (opcode == PUSH_BYTE) {
     uint8_t byteToPush = nextOp(prog);    
     push(stack, byteToPush);
   }
 
+  else if (opcode == STORE_BYTE) {
+    /* Address is 32 bit */
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    memory[address.integer] = pop(stack);
+  }
+
+  else if (opcode == LOAD_BYTE) {
+    /* Address is 32 bit */
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    push(stack, memory[address.integer]);
+  }
+
   else if (opcode == HALT) {
     return 0;
+  }
+
+  else if (opcode == SEND_INTERFACE) {
+    VM_INT32 size = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    uint8_t iface = pop(stack);  
+
+    /* copy from VM memory to buffer */
+    strncpy(iface_buffer, &memory[address.integer], size.integer);
+    handleInterface(iface, size.integer);
+  }
+
+  else if (opcode == RECV_INTERFACE) {
+    VM_INT32 size = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    uint8_t iface = pop(stack); 
+
+    /* copy from interface buffer to VM memory */
+    strncpy(&memory[address.integer], iface_buffer, size.integer);
+  }
+
+  else if (opcode == AND_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte1 & byte2);
+  }
+
+  else if (opcode == OR_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte1 | byte2);
+  }
+
+  else if (opcode == NOT_BYTE) {
+    uint8_t byte = pop(stack);
+    push(stack, ~byte);
+    }
+
+  else if (opcode == XOR_BYTE) {
+    uint8_t byte1 = pop(stack);
+    uint8_t byte2 = pop(stack);
+    push(stack, byte1 ^ byte2);
+    }
+
+  else if (opcode == JUMPG) {
+    uint8_t arg2 = pop(stack);
+    uint8_t arg1 = pop(stack);
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    if (arg1 > arg2)
+      prog->pointer = address.integer - 1;
+  }
+
+  else if (opcode == JUMPE) {
+    uint8_t arg2 = pop(stack);
+    uint8_t arg1 = pop(stack);
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    if (arg1 == arg2)
+      prog->pointer = address.integer - 1;
+  }
+
+  else if (opcode == JUMPL) {
+    uint8_t arg2 = pop(stack);
+    uint8_t arg1 = pop(stack);
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    if (arg1 < arg2)
+      prog->pointer = address.integer - 1;
+  }
+
+  else if (opcode == JUMPNE) {
+    uint8_t arg2 = pop(stack);
+    uint8_t arg1 = pop(stack);
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    if (arg1 != arg2)
+      prog->pointer = address.integer - 1;
+  }
+
+  else if (opcode == JUMPLE) {
+    uint8_t arg2 = pop(stack);
+    uint8_t arg1 = pop(stack);
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    if (arg1 <= arg2)
+      prog->pointer = address.integer - 1;
+  }
+
+  else if (opcode == JUMPGE) {
+    uint8_t arg2 = pop(stack);
+    uint8_t arg1 = pop(stack);
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    if (arg1 >= arg2)
+      prog->pointer = address.integer - 1;
+  }
+
+  else if (opcode == JUMP) {
+    VM_INT32 address = {{pop(stack), pop(stack), pop(stack), pop(stack)}};
+    prog->pointer = address.integer - 1;
   }
 
   return 1;
@@ -88,8 +226,8 @@ uint8_t nextOp(Program *prog) {
 }
 
 void runProgram(Stack *stack, Program *prog) {
-  while (processInstr(stack, prog, nextOp(prog)))
-    printStack(stack);
+  while (processInstr(stack, prog, nextOp(prog)));
+    //printStack(stack);
 }
 
 int main(void) {
@@ -97,13 +235,21 @@ int main(void) {
   initStack(&stack, MAX_STACK_SIZE);
 
   // Test program
-  uint8_t instructions[] = {PUSH, 0x00, PUSH, 0x00, PUSH, 0x03, PUSH, 0xE9, PUSH, 0x00, PUSH, 0x00, PUSH, 0x02, PUSH, 0x39, ADD_INT32, HALT};
+  uint8_t instructions[] = {PUSH_BYTE, 0x48, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, STORE_BYTE,
+                            PUSH_BYTE, 0x45, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x01, STORE_BYTE,
+                            PUSH_BYTE, 0x4C, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x02, STORE_BYTE,
+                            PUSH_BYTE, 0x4C, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x03, STORE_BYTE,
+                            PUSH_BYTE, 0x4F, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x04, STORE_BYTE,
+                            PUSH_BYTE, 0x01, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 
+                            0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x00, PUSH_BYTE, 0x05, SEND_INTERFACE, HALT};
+
   Program prog;
   prog.pointer = 0;
   prog.buffer = instructions;
 
   runProgram(&stack, &prog);
-  printStack(&stack);
+  //printMemory(memory);
+  //printStack(&stack);
 
 
 }

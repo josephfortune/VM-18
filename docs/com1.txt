@@ -1,0 +1,89 @@
+11/19/2017
+
+--VM18--
+
+
+Goal:
+
+Create a simple virtual machine for which programs will be written with the 
+
+intention of having a limitless lifespan. 
+
+
+The idea is to have a VM does not add features, but simply adapts to new 
+hardware architectures. Thus, a program written in 2017 should be able to
+run in 2070.
+
+The VM source code will change. Programs written for the VM will not have to.
+
+
+
+Implementation:
+
+Beyond the core VM, there will be 5 abstract modules to allow the VM to 
+function on its architecture. 
+
+1. input
+2. graphics
+3. file
+4. network
+5. sound
+
+
+1. input
+
+  In considering the distant future, we can't assume a keyboard and mouse, but
+we can assume something of analagous behavior. The module needs to support these
+abstract concepts. For example, we may not always use a mouse, but there will
+likely always be some notion of directional displacement, just as smart phones 
+of today use finger scrolling. Likewise, we may not always have a right 
+mouseclick, but rather some gesture to indicate an alternate menu.
+
+
+2. graphics
+  
+  The graphics are intended to be for applications that are entirely
+software-rendered and independent of any external graphics acceleration. There
+will be the abstraction of a screen-surface, and the drawable pixels on that
+surface. This is enough to create anything from a simple snake game, to a first
+person shooter (given enough computing power). 
+
+
+3. file
+
+  This is an area that I'm very nervous about anticipating. I have to assume 
+that the paradigm of named files within a hierarchy of directories will remain,
+and that the only major differences will be the way in which those hierachies 
+are symbolicly represented. 
+
+  We require the abstraction of a file, a bytestream to/from permanent storage, 
+as well as the filepath, a way in which to locate that file through a directory
+hierarchy. This means we will need to define a syntax to describe filepaths
+that will be architecture independent.
+
+
+4. network
+
+  The network abstraction will be in a form similar to a BSD socket. We cannot
+assume that current IPV6 or http addressing scheme will not change. We have to
+assume, however, that there will be some type of addressing scheme that can be
+specified as a string and converted to the appropriate format. Thus network
+addresses in the VM must be specified as a string. Then the VM can handle
+conversation to the appropriate current format. This also means that a program
+written for the VM should not hard code addresses, but instead prompt the user 
+for them, or alternatively store them in an external file that can be easily 
+modified. 
+
+
+5. sound
+
+  The sound abstraction presents a unique problem because sound is almost never
+produced on the fly, but is instead recorded in advance and stored into files.
+The wav file format is the rawest representation of digitally recorded sound. 
+We cannot assume that the wav format will always be in use, but if the VM was
+forced to have to make a conversation to a more modern format, the wav seems
+like the most logical choice given its simplicity and purity.
+
+  The task of the sound module will be simply to take wav files as input, and 
+play them on the native sound interface.
+
